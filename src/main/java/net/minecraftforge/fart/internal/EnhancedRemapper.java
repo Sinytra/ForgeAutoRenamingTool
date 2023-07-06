@@ -28,7 +28,7 @@ import net.minecraftforge.srgutils.IMappingFile;
 
 import static org.objectweb.asm.Opcodes.*;
 
-class EnhancedRemapper extends Remapper {
+public class EnhancedRemapper extends Remapper {
     private final ClassProvider classProvider;
     private final IMappingFile map;
     private final Map<String, Optional<MClass>> resolved = new ConcurrentHashMap<>();
@@ -102,7 +102,7 @@ class EnhancedRemapper extends Remapper {
         }
     }
 
-    private Optional<MClass> getClass(String cls) {
+    public Optional<MClass> getClass(String cls) {
         if (cls == null || cls.charAt(0) == '[') // Enums values() function invokes 'clone' on the array type.
             return Optional.empty();             // I'm pretty sure that i'd require stupid hacky JVM to allow native array methods to be remapped.
         Optional<MClass> ret = resolved.get(cls);
@@ -134,7 +134,7 @@ class EnhancedRemapper extends Remapper {
         return Optional.of(new MClass(icls.orElse(null), mcls));
     }
 
-    private class MClass {
+    public class MClass {
         private final IClassInfo icls;
         private final IMappingFile.IClass mcls;
         private final String mappedName;
