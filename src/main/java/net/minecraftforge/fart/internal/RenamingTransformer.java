@@ -5,22 +5,20 @@
 
 package net.minecraftforge.fart.internal;
 
+import net.minecraftforge.fart.api.ClassProvider;
+import net.minecraftforge.fart.api.Transformer;
+import net.minecraftforge.srgutils.IMappingFile;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.commons.ClassRemapper;
+
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.commons.ClassRemapper;
-
-import net.minecraftforge.fart.api.ClassProvider;
-import net.minecraftforge.fart.api.Transformer;
-import net.minecraftforge.srgutils.IMappingFile;
 
 public class RenamingTransformer implements Transformer {
     private static final String ABSTRACT_FILE = "fernflower_abstract_parameter_names.txt";
@@ -33,8 +31,12 @@ public class RenamingTransformer implements Transformer {
     }
 
     public RenamingTransformer(ClassProvider classProvider, IMappingFile map, Consumer<String> log, boolean collectAbstractParams) {
+        this(new EnhancedRemapper(classProvider, map, log), collectAbstractParams);
+    }
+
+    public RenamingTransformer(EnhancedRemapper remapper, boolean collectAbstractParams) {
         this.collectAbstractParams = collectAbstractParams;
-        this.remapper = new EnhancedRemapper(classProvider, map, log);
+        this.remapper = remapper;
     }
 
     @Override
