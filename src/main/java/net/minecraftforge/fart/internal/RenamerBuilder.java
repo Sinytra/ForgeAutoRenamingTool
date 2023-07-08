@@ -7,6 +7,7 @@ package net.minecraftforge.fart.internal;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -20,7 +21,7 @@ import net.minecraftforge.srgutils.IMappingFile;
 import static java.util.Objects.requireNonNull;
 
 public class RenamerBuilder implements Builder {
-    private final List<File> libraries = new ArrayList<>();
+    private final List<Path> libraries = new ArrayList<>();
     private final List<ClassProvider> classProviders = new ArrayList<>();
     private final List<Transformer.Factory> transformerFactories = new ArrayList<>();
     private int threads = Runtime.getRuntime().availableProcessors();
@@ -31,6 +32,12 @@ public class RenamerBuilder implements Builder {
 
     @Override
     public Builder lib(File value) {
+        this.libraries.add(value.toPath());
+        return this;
+    }
+
+    @Override
+    public Builder lib(Path value) {
         this.libraries.add(value);
         return this;
     }

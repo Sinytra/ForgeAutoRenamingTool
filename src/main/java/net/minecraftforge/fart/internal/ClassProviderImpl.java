@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 import static org.objectweb.asm.Opcodes.*;
 
-class ClassProviderImpl implements ClassProvider {
+public class ClassProviderImpl implements ClassProvider {
     /**
      * A list of the open (ZIP) filesystems.
      */
@@ -66,21 +66,26 @@ class ClassProviderImpl implements ClassProvider {
         return this.classCache != null ? this.classCache.computeIfAbsent(name, this::computeClassInfo) : computeClassInfo(name);
     }
 
-    private Optional<? extends IClassInfo> computeClassInfo(String name) {
-        if (this.classInfos.containsKey(name))
-            return this.classInfos.get(name);
-
-        Path source = this.sources.get(name);
+    @Override
+    public Optional<byte[]> getClassBytes(String cls) {
+        Path source = this.sources.get(cls);
 
         if (source == null)
             return Optional.empty();
 
         try {
             byte[] data = Util.toByteArray(Files.newInputStream(source));
-            return Optional.of(new ClassInfo(data));
+            return Optional.of(data);
         } catch (IOException e) {
             throw new RuntimeException("Could not get data to compute class info in file: " + source.toAbsolutePath(), e);
         }
+    }
+
+    private Optional<? extends IClassInfo> computeClassInfo(String name) {
+        if (this.classInfos.containsKey(name))
+            return this.classInfos.get(name);
+
+        return getClassBytes(name).map(ClassInfo::new);
     }
 
     @Override
@@ -90,7 +95,7 @@ class ClassProviderImpl implements ClassProvider {
         }
     }
 
-    static class ClassInfo implements IClassInfo {
+    public static class ClassInfo implements IClassInfo {
         private final String name;
         private final Access access;
         private final String superName;
@@ -100,7 +105,7 @@ class ClassProviderImpl implements ClassProvider {
         private final Map<String, MethodInfo> methods;
         private Collection<MethodInfo> methodsView;
 
-        ClassInfo(byte[] data) {
+        public ClassInfo(byte[] data) {
             ClassReader reader = new ClassReader(data);
             ClassNode node = new ClassNode();
             reader.accept(node, ClassReader.SKIP_CODE);

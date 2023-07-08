@@ -29,7 +29,7 @@ import net.minecraftforge.srgutils.IMappingFile;
 import static org.objectweb.asm.Opcodes.*;
 
 public class EnhancedRemapper extends Remapper {
-    private final ClassProvider classProvider;
+    protected final ClassProvider classProvider;
     private final IMappingFile map;
     private final Map<String, Optional<MClass>> resolved = new ConcurrentHashMap<>();
     private final Consumer<String> log;

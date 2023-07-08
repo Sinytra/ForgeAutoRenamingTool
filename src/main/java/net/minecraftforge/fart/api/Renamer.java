@@ -7,6 +7,7 @@ package net.minecraftforge.fart.api;
 
 import java.io.Closeable;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.function.Consumer;
 
 import net.minecraftforge.fart.internal.RenamerBuilder;
@@ -48,6 +49,8 @@ public interface Renamer extends Closeable {
          * @return this builder
          */
         Builder lib(File value);
+        
+        Builder lib(Path value);
 
         /**
          * Adds a mapping transformer using the provided mapping file.

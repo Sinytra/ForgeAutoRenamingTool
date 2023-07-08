@@ -7,6 +7,8 @@ package net.minecraftforge.fart.internal;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -16,11 +18,12 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.MethodRemapper;
 
-class EnhancedClassRemapper extends ClassRemapper {
+public class EnhancedClassRemapper extends ClassRemapper {
     private final EnhancedRemapper remapper;
+    @Nullable
     private final RenamingTransformer transformer;
 
-    EnhancedClassRemapper(ClassVisitor classVisitor, EnhancedRemapper remapper, RenamingTransformer transformer) {
+    public EnhancedClassRemapper(ClassVisitor classVisitor, EnhancedRemapper remapper, @Nullable RenamingTransformer transformer) {
         super(classVisitor, remapper);
         this.remapper = remapper;
         this.transformer = transformer;
@@ -37,7 +40,7 @@ class EnhancedClassRemapper extends ClassRemapper {
         if (methodVisitor == null)
             return null;
 
-        if ((access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE)) != 0)
+        if (transformer != null && (access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE)) != 0)
             renameAbstract(access, mname, mdescriptor);
 
         return new MethodRemapper(methodVisitor, remapper) {
