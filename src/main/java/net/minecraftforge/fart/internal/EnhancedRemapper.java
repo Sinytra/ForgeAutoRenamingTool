@@ -33,6 +33,7 @@ public class EnhancedRemapper extends Remapper {
     private final IMappingFile map;
     private final Map<String, Optional<MClass>> resolved = new ConcurrentHashMap<>();
     private final Consumer<String> log;
+    private final Map<String, Object> locks = new ConcurrentHashMap<>();
 
     public EnhancedRemapper(ClassProvider classProvider, IMappingFile map, Consumer<String> log) {
         this.classProvider = classProvider;
@@ -107,7 +108,7 @@ public class EnhancedRemapper extends Remapper {
             return Optional.empty();             // I'm pretty sure that i'd require stupid hacky JVM to allow native array methods to be remapped.
         Optional<MClass> ret = resolved.get(cls);
         if (ret == null) {
-            synchronized(cls.intern()) {
+            synchronized(this.locks.computeIfAbsent(cls.intern(), s -> new Object())) {
                 ret = resolved.get(cls);
                 if (ret == null) {
                     ret = computeClass(cls);
