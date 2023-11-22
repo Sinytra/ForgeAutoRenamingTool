@@ -11,6 +11,7 @@ import net.minecraftforge.srgutils.IMappingFile;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.commons.ClassRemapper;
+import org.objectweb.asm.tree.ClassNode;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 
 public class RenamingTransformer implements Transformer {
     private static final String ABSTRACT_FILE = "fernflower_abstract_parameter_names.txt";
-    private final EnhancedRemapper remapper;
+    protected final EnhancedRemapper remapper;
     private final Set<String> abstractParams = ConcurrentHashMap.newKeySet();
     private final boolean collectAbstractParams;
 
@@ -39,14 +40,21 @@ public class RenamingTransformer implements Transformer {
         this.remapper = remapper;
     }
 
+    protected void postProcess(ClassNode node) {
+
+    }
+
     @Override
     public ClassEntry process(ClassEntry entry) {
         ClassReader reader = new ClassReader(entry.getData());
-        ClassWriter writer = new ClassWriter(0);
-        ClassRemapper remapper = new EnhancedClassRemapper(writer, this.remapper, this);
+        ClassNode node = new ClassNode();
+        ClassRemapper remapper = new EnhancedClassRemapper(node, this.remapper, this);
 
         reader.accept(remapper, 0);
 
+        postProcess(node);
+        ClassWriter writer = new ClassWriter(0);
+        node.accept(writer);
         byte[] data = writer.toByteArray();
         String newName = this.remapper.map(entry.getClassName());
 
