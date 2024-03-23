@@ -5,18 +5,19 @@
 
 package net.minecraftforge.fart.internal;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
 import net.minecraftforge.fart.api.ClassProvider;
 import net.minecraftforge.fart.api.Renamer;
 import net.minecraftforge.fart.api.Renamer.Builder;
 import net.minecraftforge.fart.api.Transformer;
 import net.minecraftforge.srgutils.IMappingFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
@@ -29,6 +30,7 @@ public class RenamerBuilder implements Builder {
     private Consumer<String> logger = System.out::println;
     private Consumer<String> debug = s -> {};
     private boolean collectAbstractParams = true;
+    private final List<String> ignoreJarPathPrefix = new ArrayList<>();
 
     @Override
     public Builder lib(File value) {
@@ -102,6 +104,12 @@ public class RenamerBuilder implements Builder {
     }
 
     @Override
+    public Builder ignoreJarPathPrefix(String... prefixes) {
+        this.ignoreJarPathPrefix.addAll(Arrays.asList(prefixes));
+        return this;
+    }
+
+    @Override
     public Renamer build() {
         List<ClassProvider> classProviders = new ArrayList<>(this.classProviders);
         if (this.withJvmClasspath)
@@ -129,6 +137,6 @@ public class RenamerBuilder implements Builder {
         for (Transformer.Factory factory : transformerFactories) {
             transformers.add(requireNonNull(factory.create(ctx), "output of " + factory));
         }
-        return new RenamerImpl(libraries, transformers, sortedClassProvider, classProviders, threads, logger, debug);
+        return new RenamerImpl(libraries, transformers, sortedClassProvider, classProviders, threads, logger, debug, ignoreJarPathPrefix);
     }
 }

@@ -40,11 +40,12 @@ class RenamerImpl implements Renamer {
     private final int threads;
     private final Consumer<String> logger;
     private final Consumer<String> debug;
+    private final List<String> ignoreJarPathPrefix;
     private boolean setup = false;
     private ClassProvider libraryClasses;
 
     RenamerImpl(List<Path> libraries, List<Transformer> transformers, SortedClassProvider sortedClassProvider, List<ClassProvider> classProviders,
-            int threads, Consumer<String> logger, Consumer<String> debug) {
+            int threads, Consumer<String> logger, Consumer<String> debug, List<String> ignoreJarPathPrefix) {
         this.libraries = libraries;
         this.transformers = transformers;
         this.sortedClassProvider = sortedClassProvider;
@@ -52,6 +53,7 @@ class RenamerImpl implements Renamer {
         this.threads = threads;
         this.logger = logger;
         this.debug = debug;
+        this.ignoreJarPathPrefix = ignoreJarPathPrefix;
     }
 
     private void setup() {
@@ -88,6 +90,8 @@ class RenamerImpl implements Renamer {
                 String name = e.getName();
                 byte[] data = Util.toByteArray(in.getInputStream(e));
 
+                if (this.ignoreJarPathPrefix.stream().anyMatch(name::startsWith))
+                    return;
                 if (name.endsWith(".class"))
                     oldEntries.add(ClassEntry.create(name, e.getTime(), data));
                 else if (name.equals(MANIFEST_NAME))
