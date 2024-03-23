@@ -83,6 +83,7 @@ class RenamerImpl implements Renamer {
         logger.accept("Reading Input: " + input.getAbsolutePath());
         // Read everything from the input jar!
         List<Entry> oldEntries = new ArrayList<>();
+        List<Entry> excludedEntries = new ArrayList<>();
         try (ZipFile in = new ZipFile(input)) {
             Util.forZip(in, e -> {
                 if (e.isDirectory())
@@ -90,14 +91,17 @@ class RenamerImpl implements Renamer {
                 String name = e.getName();
                 byte[] data = Util.toByteArray(in.getInputStream(e));
 
-                if (this.ignoreJarPathPrefix.stream().anyMatch(name::startsWith))
-                    return;
                 if (name.endsWith(".class"))
                     oldEntries.add(ClassEntry.create(name, e.getTime(), data));
                 else if (name.equals(MANIFEST_NAME))
                     oldEntries.add(ManifestEntry.create(e.getTime(), data));
-                else
-                    oldEntries.add(ResourceEntry.create(name, e.getTime(), data));
+                else {
+                    if (this.ignoreJarPathPrefix.stream().anyMatch(name::startsWith)) {
+                        excludedEntries.add(ResourceEntry.create(name, e.getTime(), data));
+                    } else {
+                        oldEntries.add(ResourceEntry.create(name, e.getTime(), data));
+                    }
+                }
             });
         } catch (IOException e) {
             throw new RuntimeException("Could not parse input: " + input.getAbsolutePath(), e);
@@ -135,6 +139,7 @@ class RenamerImpl implements Renamer {
             // Process everything
             logger.accept("Processing entries");
             List<Entry> newEntries = async.invokeAll(oldEntries, Entry::getName, this::processEntry);
+            newEntries.addAll(excludedEntries);
 
             logger.accept("Adding extras");
             transformers.stream().forEach(t -> newEntries.addAll(t.getExtras()));
