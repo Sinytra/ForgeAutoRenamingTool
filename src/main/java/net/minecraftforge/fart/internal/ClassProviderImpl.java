@@ -195,7 +195,7 @@ public class ClassProviderImpl implements ClassProvider {
 
         @Override
         public Optional<? extends IMethodInfo> getMethod(String name, String desc) {
-            return methods == null ? Optional.empty() : Optional.ofNullable(methods.get(name + " " + desc));
+            return methods == null ? Optional.empty() : Optional.ofNullable(methods.get(name + desc));
         }
 
         @Override
