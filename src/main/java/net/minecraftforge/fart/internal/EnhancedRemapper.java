@@ -41,7 +41,32 @@ public class EnhancedRemapper extends Remapper {
     }
 
     @Override public String mapModuleName(final String name) { return name; } // TODO? None of the mapping formats support this.
-    @Override public String mapAnnotationAttributeName(final String descriptor, final String name) { return name; } // TODO: Is this just methods?
+    @Override
+    public String mapAnnotationAttributeName(final String descriptor, final String name) {
+        Type type = Type.getType(descriptor);
+        if (type.getSort() != Type.OBJECT)
+            return name;
+
+        MClass cls = getClass(type.getInternalName()).orElse(null);
+        if (cls == null)
+            return name;
+
+        List<MClass.MMethod> lst = cls.getMethods(name).orElse(null);
+        if (lst == null)
+            return name;
+
+        // You should not be able to specify conflicting annotation value names
+        // As annotation attributes can't have parameters, and the bytecode doesn't store the descriptor
+        // But renamers can be weird so log instead of doing weird things.
+        if (lst.size() != 1) {
+            for (MClass.MMethod mtd : lst)
+                log.accept("Duplicate Annotation name: " + cls.getName() + " " + mtd.getName() + mtd.getDescriptor() + " -> " + cls.getMapped() + " " + mtd.getName());
+            return name;
+        }
+
+        return lst.get(0).getMapped();
+    }
+
     @Override public String mapInvokeDynamicMethodName(final String name, final String descriptor) { return name; } // TODO: Lookup how the JVM resolves this and attempt to resolve it to get the owner?
 
     @Override
@@ -143,6 +168,7 @@ public class EnhancedRemapper extends Remapper {
         private final Collection<Optional<MField>> fieldsView = Collections.unmodifiableCollection(fields.values());
         private final Map<String, Optional<MMethod>> methods = new ConcurrentHashMap<>();
         private final Collection<Optional<MMethod>> methodsView = Collections.unmodifiableCollection(methods.values());
+        private final Map<String, Optional<List<MMethod>>> methodsByName = new ConcurrentHashMap<>();
 
         MClass(IClassInfo icls, IMappingFile.IClass mcls) {
             if (icls == null && mcls == null)
@@ -328,6 +354,19 @@ public class EnhancedRemapper extends Remapper {
 
         public Optional<MMethod> getMethod(String name, String desc) {
             return this.methods.computeIfAbsent(name + desc, k -> Optional.empty());
+        }
+
+        Optional<List<MMethod>> getMethods(String name) {
+            return this.methodsByName.computeIfAbsent(name, k -> {
+                List<MMethod> mtds = new ArrayList<>();
+                for (Optional<MMethod> opt : this.getMethods()) {
+                    MMethod mtd = opt.orElse(null);
+                    if (mtd == null || !k.equals(mtd.getName()))
+                        continue;
+                    mtds.add(mtd);
+                }
+                return mtds.isEmpty() ? Optional.<List<MMethod>>empty() : Optional.of(mtds);
+            });
         }
 
         @Override
