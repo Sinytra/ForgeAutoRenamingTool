@@ -2,7 +2,6 @@
  * Copyright (c) Forge Development LLC and contributors
  * SPDX-License-Identifier: LGPL-2.1-only
  */
-
 package net.minecraftforge.fart.internal;
 
 import java.io.File;
@@ -13,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -39,6 +37,7 @@ class RenamerImpl implements Renamer {
     private final List<ClassProvider> classProviders;
     private final int threads;
     private final Consumer<String> logger;
+    @SuppressWarnings("unused")
     private final Consumer<String> debug;
     private final List<String> ignoreJarPathPrefix;
     private boolean setup = false;
@@ -74,11 +73,15 @@ class RenamerImpl implements Renamer {
         if (!this.setup)
             this.setup();
 
-        input = Objects.requireNonNull(input).getAbsoluteFile();
-        output = Objects.requireNonNull(output).getAbsoluteFile();
-
+        if (input == null)
+            throw new IllegalArgumentException("input argument can't be null");
+        if (output == null)
+            throw new IllegalArgumentException("output argument can't be null");
         if (!input.exists())
             throw new IllegalArgumentException("Input file not found: " + input.getAbsolutePath());
+
+        input = input.getAbsoluteFile();
+        output = output.getAbsoluteFile();
 
         logger.accept("Reading Input: " + input.getAbsolutePath());
         // Read everything from the input jar!
@@ -142,7 +145,7 @@ class RenamerImpl implements Renamer {
             newEntries.addAll(excludedEntries);
 
             logger.accept("Adding extras");
-            transformers.stream().forEach(t -> newEntries.addAll(t.getExtras()));
+            transformers.forEach(t -> newEntries.addAll(t.getExtras()));
 
             Set<String> seen = new HashSet<>();
             String dupes = newEntries.stream().map(Entry::getName)
@@ -161,7 +164,7 @@ class RenamerImpl implements Renamer {
 
             // We care about stable output, so sort, and single thread write.
             logger.accept("Sorting");
-            Collections.sort(newEntries, this::compare);
+            newEntries.sort(this::compare);
 
             if (!output.getParentFile().exists())
                 output.getParentFile().mkdirs();
@@ -170,6 +173,9 @@ class RenamerImpl implements Renamer {
             logger.accept("Writing Output: " + output.getAbsolutePath());
             try (FileOutputStream fos = new FileOutputStream(output);
                 ZipOutputStream zos = new ZipOutputStream(fos)) {
+                // Explicitly set compression level because of potential differences based on environment.
+                // See https://github.com/MinecraftForge/JarSplitter/pull/2
+                zos.setLevel(6);
 
                 for (Entry e : newEntries) {
                     String name = e.getName();

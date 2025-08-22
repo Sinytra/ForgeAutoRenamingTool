@@ -2,7 +2,6 @@
  * Copyright (c) Forge Development LLC and contributors
  * SPDX-License-Identifier: LGPL-2.1-only
  */
-
 package net.minecraftforge.fart.internal;
 
 import net.minecraftforge.fart.api.ClassProvider;
@@ -80,6 +79,6 @@ public class RenamingTransformer implements Transformer {
     }
 
     void storeNames(String className, String methodName, String methodDescriptor, Collection<String> paramNames) {
-        abstractParams.add(className + ' ' + methodName + ' ' + methodDescriptor + ' ' + paramNames.stream().collect(Collectors.joining(" ")));
+        abstractParams.add(className + ' ' + methodName + ' ' + methodDescriptor + ' ' + String.join(" ", paramNames));
     }
 }
