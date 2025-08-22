@@ -17,7 +17,7 @@ plugins {
 }
 apply plugin: 'net.minecraftforge.gradleutils'
 
-group 'net.minecraftforge'
+group 'org.sinytra'
 version = gradleutils.getTagOffsetBranchVersion(null, 'master', 'HEAD')
 println('Version: ' + version)
 
@@ -39,7 +39,7 @@ ext {
             'Implementation-Vendor':    'Forge Development LLC'
         ] as LinkedHashMap, 'net/minecraftforge/fart/')
     }
-    INITIAL_CHANGELOG_TAG = '0.1'
+    INITIAL_CHANGELOG_TAG = '1.0'
 }
 
 repositories {
@@ -132,7 +132,18 @@ publishing {
         }
     }
     repositories {
-        maven gradleutils.getPublishingForgeMaven()
+        def env = System.getenv()
+        if (env["MAVEN_URL"] != null) {
+            repositories.maven {
+                url = env["MAVEN_URL"]
+                if (env["MAVEN_USERNAME"] != null) {
+                    credentials {
+                        username = env["MAVEN_USERNAME"]
+                        password = env["MAVEN_PASSWORD"]
+                    }
+                }
+            }
+        }
     }
 }
 
