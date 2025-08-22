@@ -112,7 +112,6 @@ public class EnhancedRemapper extends Remapper {
                 ret = resolved.get(cls);
                 if (ret == null) {
                     ret = computeClass(cls);
-                    resolved.put(cls, ret);
                 }
             }
         }
@@ -132,7 +131,7 @@ public class EnhancedRemapper extends Remapper {
         IMappingFile.IClass mcls = this.map.getClass(cls);
         if (!icls.isPresent() && mcls == null)
             return Optional.empty();
-        return Optional.of(new MClass(icls.orElse(null), mcls));
+        return Optional.of(new MClass(cls, icls.orElse(null), mcls));
     }
 
     public class MClass {
@@ -145,13 +144,17 @@ public class EnhancedRemapper extends Remapper {
         private final Map<String, Optional<MMethod>> methods = new ConcurrentHashMap<>();
         private Collection<Optional<MMethod>> methodsView = Collections.unmodifiableCollection(methods.values());
 
-        MClass(IClassInfo icls, IMappingFile.IClass mcls) {
+        MClass(String cls, IClassInfo icls, IMappingFile.IClass mcls) {
             if (icls == null && mcls == null)
                 throw new IllegalArgumentException("Can't pass in both nulls..");
 
             this.icls = icls;
             this.mcls = mcls;
             this.mappedName = mcls == null ? EnhancedRemapper.this.getMap().remapClass(icls.getName()) : mcls.getMapped();
+
+            // Put ourselves into the resolved map earlier so we could avoid StackOverflowError in some cases
+            // See https://github.com/Sinytra/Connector/issues/1592#issuecomment-3211922070
+            resolved.put(cls, Optional.of(this));
 
             if (icls != null) {
                 List<MClass> parents = new ArrayList<>();
